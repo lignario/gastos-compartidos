@@ -1,10 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Ícono: casa blanca con el signo $ en la puerta (fondo verde en ic_launcher_background). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,30c-9.9,0 -18,8.1 -18,18 0,7.2 4.3,13.4 10.4,16.3L46.4,78h15.2l0,-13.7C67.7,61.4 72,55.2 72,48 72,38.1 63.9,30 54,30zM54,38c5.5,0 10,4.5 10,10 0,5.5 -4.5,10 -10,10 -5.5,0 -10,-4.5 -10,-10 0,-5.5 4.5,-10 10,-10z" />
+    <!-- Escalado leve para que la casa quede dentro de la zona segura de las máscaras. -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.92"
+        android:scaleY="0.92">
+        <!-- Techo -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M54,24L85,51L23,51Z" />
+        <!-- Paredes -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M33,47H75V81H33Z" />
+        <!-- Puerta -->
+        <path
+            android:fillColor="#2E7D5B"
+            android:pathData="M47,57H61A2,2 0,0 1,63 59V81H45V59A2,2 0,0 1,47 57Z" />
+        <!-- Signo $: la S -->
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="2.2"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:fillColor="#00000000"
+            android:pathData="M58,64.6C57.1,63.3 55.7,62.6 54,62.6C51.6,62.6 50,64 50,66C50,68.4 52.4,69 54,69.5C56,70.1 58,70.8 58,73.1C58,75.2 56.4,76.6 54,76.6C52.1,76.6 50.6,75.8 49.8,74.4" />
+        <!-- Signo $: la barra vertical -->
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="2.2"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:pathData="M54,60.4V78.8" />
+    </group>
 </vector>
