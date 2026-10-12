@@ -44,7 +44,7 @@ La app permite iniciar la solicitud desde el menú de cuenta y abrir un correo c
 - Política de privacidad prevista: <https://lignario.github.io/privacy/>.
 - Solicitud de eliminación prevista: <https://lignario.github.io/delete-account/>.
 - Guía interna de atención: [`ACCOUNT_DELETION_RUNBOOK.md`](ACCOUNT_DELETION_RUNBOOK.md).
-- Las páginas están en el commit local del repositorio del sitio, pero el push a GitHub fue rechazado porque la sesión configurada de GitHub no está disponible. **No enviar el formulario de Play Console hasta que ambos enlaces públicos carguen correctamente.**
+- Las páginas ya se publicaron en GitHub Pages y se verificaron por HTTP con respuesta 200 en ambos enlaces. Abrirlas nuevamente antes de enviar la ficha de Play Console.
 
 La política de Google Play requiere que la eliminación pueda iniciarse tanto dentro de la app como desde un recurso web externo, y que se eliminen los datos asociados; no basta con suspender la cuenta. Revisar la política vigente antes de completar la declaración: [Requisitos de eliminación de datos de usuario](https://support.google.com/googleplay/android-developer/answer/10144311?hl=es).
 
@@ -59,7 +59,7 @@ Si la cuenta de desarrollador es personal y fue creada después del 13-11-2023, 
 
 ## Tareas antes de producción
 
-1. Recuperar el acceso de publicación a GitHub y publicar el commit local del sitio; abrir los dos enlaces desde un navegador sin sesión.
+1. Confirmar que ambos enlaces públicos continúan accesibles desde un navegador sin sesión.
 2. Subir el AAB a prueba interna, registrar las huellas de Play en Firebase y probar en un teléfono real con cuentas de prueba.
 3. Completar en Play Console la ficha, capturas, clasificación de contenido, público objetivo, acceso para revisión y Seguridad de los datos. Declarar con precisión correo/UID, gastos/notas y procesamiento en Firebase; no marcar categorías ni afirmar que no se comparten datos sin verificar el uso efectivo.
 4. Si corresponde a una cuenta personal nueva, organizar la prueba cerrada de 12 personas durante 14 días y solicitar acceso a producción.
