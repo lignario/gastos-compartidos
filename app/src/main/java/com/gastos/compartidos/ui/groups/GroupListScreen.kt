@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
@@ -46,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -75,8 +77,11 @@ fun GroupListScreen(
     var groupToRename by rememberSaveable { mutableStateOf<String?>(null) }
     var groupToDelete by rememberSaveable { mutableStateOf<String?>(null) }
     var showLanguages by rememberSaveable { mutableStateOf(false) }
+    var showAccount by remember { mutableStateOf(false) }
+    var showDeletion by rememberSaveable { mutableStateOf(false) }
 
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val versionName = remember {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -117,6 +122,25 @@ fun GroupListScreen(
                     }
                 },
                 actions = {
+                    Box {
+                        IconButton(onClick = { showAccount = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.account_options))
+                        }
+                        DropdownMenu(expanded = showAccount, onDismissRequest = { showAccount = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.privacy_policy)) },
+                                onClick = { showAccount = false; uriHandler.openUri("https://lignario.github.io/privacy/") },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.support)) },
+                                onClick = { showAccount = false; uriHandler.openUri("https://lignario.github.io/delete-account/") },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.delete_account)) },
+                                onClick = { showAccount = false; showDeletion = true },
+                            )
+                        }
+                    }
                     Box {
                         TextButton(onClick = { showLanguages = true }) {
                             Text(
@@ -251,6 +275,8 @@ fun GroupListScreen(
             }
         }
     }
+
+    if (showDeletion) AccountDeletionDialog(onDismiss = { showDeletion = false })
 
     if (showCreate) {
         if (isActivities || isNotes) {

@@ -9,3 +9,11 @@ captures/
 .cxx/
 app/google-services.json
 .toolchain/
+signing.properties
+.signing/
+*.jks
+*.keystore
+play-site/
+node_modules/
+*-debug.log
+.firebase/

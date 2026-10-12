@@ -41,6 +41,7 @@ class JoinGroupViewModel(private val inviteCode: String) : ViewModel() {
     }
 
     fun claim(memberId: String) {
+        if (_state.value.joining) return
         val group = _state.value.group ?: return
         val uid = AuthRepository.currentUser?.uid ?: return
         _state.update { it.copy(joining = true, error = null) }
@@ -55,6 +56,7 @@ class JoinGroupViewModel(private val inviteCode: String) : ViewModel() {
     }
 
     fun joinAsNew(name: String) {
+        if (_state.value.joining) return
         val group = _state.value.group ?: return
         val uid = AuthRepository.currentUser?.uid ?: return
         _state.update { it.copy(joining = true, error = null) }

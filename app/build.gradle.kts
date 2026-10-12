@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -5,20 +7,34 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+val signingFile = rootProject.file("signing.properties")
+val signing = Properties().apply {
+    if (signingFile.exists()) signingFile.inputStream().use { load(it) }
+}
+
 android {
     namespace = "com.gastos.compartidos"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.gastos.compartidos"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 14
-        versionName = "2.4"
+        targetSdk = 36
+        versionCode = 15
+        versionName = "2.5"
     }
 
+    signingConfigs {
+        if (signingFile.exists()) create("production") {
+            storeFile = rootProject.file(signing.getProperty("storeFile"))
+            storePassword = signing.getProperty("storePassword")
+            keyAlias = signing.getProperty("keyAlias")
+            keyPassword = signing.getProperty("keyPassword")
+        }
+    }
     buildTypes {
         release {
+            if (signingFile.exists()) signingConfig = signingConfigs.getByName("production")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -36,6 +52,18 @@ android {
     buildFeatures {
         compose = true
     }
+}
+
+tasks.register("requireReleaseSigning") {
+    doLast {
+        check(signingFile.exists()) { "Missing signing.properties. Run scripts/create-upload-key.ps1 first." }
+        for (key in listOf("storeFile", "storePassword", "keyAlias", "keyPassword")) {
+            check(!signing.getProperty(key).isNullOrBlank()) { "Missing signing property: $key" }
+        }
+    }
+}
+tasks.configureEach {
+    if (name == "preReleaseBuild") dependsOn("requireReleaseSigning")
 }
 
 dependencies {

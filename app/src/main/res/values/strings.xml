@@ -190,4 +190,13 @@
     <string name="created_by">Creada por %1$s</string>
     <string name="edit_note">Editar nota</string>
     <plurals name="today_tasks_count"><item quantity="one">Hoy toca %1$d tarea</item><item quantity="other">Hoy tocan %1$d tareas</item></plurals>
+    <string name="account_options">Opciones de cuenta</string>
+    <string name="delete_account">Eliminar mi cuenta</string>
+    <string name="deletion_send">Preparar correo</string>
+    <string name="deletion_explanation">Para solicitar la eliminación de tu cuenta y sus datos, enviá un correo desde la dirección asociada a tu cuenta. Prepararemos el mensaje; tenés que enviarlo para completar la solicitud. Revisaremos tu identidad y te informaremos del proceso. Los datos compartidos se tratarán sin borrar los datos de otras personas.</string>
+    <string name="deletion_error">No se pudo abrir una aplicación de correo. Copiá la dirección y escribinos desde tu correo de la cuenta.</string>
+    <string name="privacy_policy">Política de privacidad</string>
+    <string name="support">Ayuda y contacto</string>
+    <string name="deletion_subject">Eliminar cuenta de Gastos Compartidos</string>
+    <string name="deletion_email_body">Solicito eliminar mi cuenta y los datos personales asociados en Gastos Compartidos.\nCorreo de la cuenta: %1$s\nIdentificador: %2$s\nPor favor, confirmen el procedimiento.</string>
 </resources>

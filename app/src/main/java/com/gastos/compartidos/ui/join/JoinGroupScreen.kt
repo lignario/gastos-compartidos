@@ -80,7 +80,7 @@ fun JoinGroupScreen(
                         .padding(padding),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(stringResource(R.string.group_not_found, inviteCode))
+                    Text(state.error ?: stringResource(R.string.group_not_found, inviteCode))
                 }
             }
             else -> {
@@ -103,6 +103,7 @@ fun JoinGroupScreen(
                     group.unclaimedMembers().forEach { (memberId, name) ->
                         Card(
                             onClick = { viewModel.claim(memberId) },
+                            enabled = !state.joining,
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text(

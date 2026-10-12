@@ -1,61 +1,81 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Perfil de usuario: cada uno solo puede escribir el suyo.
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    function signedIn() { return request.auth != null; }
+    function member(data) {
+      return signedIn() && request.auth.uid in data.memberIds;
     }
-
+    function invitationAccess(groupId, data) {
+      let access = get(/databases/$(database)/documents/users/$(request.auth.uid)/groupAccess/$(groupId));
+      return signedIn() && access.data.code == data.inviteCode;
+    }
+    match /users/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+      match /groupAccess/{groupId} {
+        allow read, delete: if signedIn() && request.auth.uid == userId;
+        allow create, update: if signedIn() && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['code'])
+          && request.resource.data.code is string
+          && get(/databases/$(database)/documents/groups/$(groupId)).data.inviteCode == request.resource.data.code;
+      }
+    }
+    // Exact-code lookup only: authenticated users cannot enumerate invitations.
+    match /invitations/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['groupId'])
+        && request.resource.data.groupId is string
+        && member(getAfter(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data)
+        && getAfter(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data.inviteCode == code;
+      allow update: if signedIn() && request.resource.data == resource.data
+        && member(get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data);
+      allow delete: if signedIn()
+        && member(get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data);
+    }
     match /groups/{groupId} {
-      function isMember() {
-        return request.auth != null
-          && request.auth.uid in resource.data.memberIds;
+      function validJoin() {
+        let before = resource.data;
+        let after = request.resource.data;
+        let id = after.lastJoinedMemberId;
+        return invitationAccess(groupId, before)
+          && !(request.auth.uid in before.memberIds)
+          && id is string
+          && !(id in before.memberClaims)
+          && after.diff(before).affectedKeys().hasOnly(['memberIds', 'memberClaims', 'memberNames', 'lastJoinedMemberId'])
+          && after.memberIds is list
+          && after.memberIds.size() == before.memberIds.size() + 1
+          && after.memberIds.hasAll(before.memberIds)
+          && request.auth.uid in after.memberIds
+          && after.memberClaims.diff(before.memberClaims).affectedKeys().hasOnly([id])
+          && after.memberClaims[id] == request.auth.uid
+          && after.memberNames.diff(before.memberNames).affectedKeys().hasOnly([id])
+          && after.memberNames[id] is string
+          && after.memberNames[id].size() > 0
+          && after.memberNames[id].size() <= 100
+          && (!(id in before.memberNames) || after.memberNames[id] == before.memberNames[id]);
       }
-
-      // Crear: el creador debe incluirse a sí mismo como único miembro inicial.
-      allow create: if request.auth != null
-        && request.resource.data.memberIds == [request.auth.uid];
-
-      // Leer: cualquier usuario autenticado (necesario para unirse por código;
-      // los códigos de invitación actúan como secreto compartido).
-      allow read: if request.auth != null;
-
-      // Actualizar: miembros del grupo, o un usuario que se une a sí mismo.
-      allow update: if isMember()
-        || (request.auth != null
-            && request.resource.data.memberIds.hasAll(resource.data.memberIds)
-            && request.auth.uid in request.resource.data.memberIds);
-
-      // Eliminar: cualquier miembro del grupo.
-      allow delete: if isMember();
-
-      // Movimientos: solo miembros del grupo.
-      match /entries/{entryId} {
-        function isGroupMember() {
-          return request.auth != null
-            && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
-        }
-        allow read, create, update, delete: if isGroupMember();
-      }
-
-      // Agenda de la casa (tareas/actividades): solo miembros del grupo.
-      match /tasks/{taskId} {
-        function isGroupMember() {
-          return request.auth != null
-            && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
-        }
-        allow read, create, update, delete: if isGroupMember();
-      }
-
-      // Notas compartidas: solo miembros del grupo.
-      match /notes/{noteId} {
-        function isGroupMember() {
-          return request.auth != null
-            && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
-        }
-        allow read, create, update, delete: if isGroupMember();
+      allow create: if signedIn()
+        && request.resource.data.memberIds == [request.auth.uid]
+        && request.resource.data.memberClaims is map
+        && request.resource.data.memberClaims.size() == 1
+        && request.resource.data.memberClaims.values() == [request.auth.uid]
+        && request.resource.data.memberNames is map
+        && request.resource.data.memberNames.keys().hasAll(request.resource.data.memberClaims.keys())
+        && request.resource.data.inviteCode is string
+        && request.resource.data.inviteCode.matches('[A-Z2-9]{12}')
+        && getAfter(/databases/$(database)/documents/invitations/$(request.resource.data.inviteCode)).data.groupId == groupId;
+      allow get: if member(resource.data) || invitationAccess(groupId, resource.data);
+      allow list: if member(resource.data);
+      allow update: if signedIn() && (
+        (member(resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'defaultCurrency', 'memberNames'])
+          && request.resource.data.memberNames.keys().hasAll(resource.data.memberNames.keys()))
+        || validJoin());
+      allow delete: if member(resource.data);
+      match /{collection}/{documentId} {
+        allow read, write: if collection in ['entries', 'tasks', 'notes']
+          && member(get(/databases/$(database)/documents/groups/$(groupId)).data);
       }
     }
   }

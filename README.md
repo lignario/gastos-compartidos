@@ -26,6 +26,9 @@ al estilo Splitwise/Splid.
 
 ## Puesta en marcha
 
+Para la preparación de la versión 2.5 de Google Play, firma de producción,
+migración y pendientes de publicación, ver [PLAY_STORE.md](PLAY_STORE.md).
+
 ### 1. Crear el proyecto de Firebase (imprescindible)
 
 El archivo `app/google-services.json` no se guarda en Git. Para compilar hay que

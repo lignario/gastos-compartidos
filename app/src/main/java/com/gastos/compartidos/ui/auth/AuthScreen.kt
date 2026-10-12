@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -44,6 +45,7 @@ fun AuthScreen(onLoggedIn: () -> Unit) {
     var error by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
 
     Column(
         modifier = Modifier
@@ -54,6 +56,9 @@ fun AuthScreen(onLoggedIn: () -> Unit) {
         verticalArrangement = Arrangement.Center,
     ) {
         Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium)
+        TextButton(onClick = { uriHandler.openUri("https://lignario.github.io/privacy/") }) {
+            Text(stringResource(R.string.privacy_policy))
+        }
         Text(
             if (isRegister) stringResource(R.string.create_account) else stringResource(R.string.sign_in),
             style = MaterialTheme.typography.bodyLarge,

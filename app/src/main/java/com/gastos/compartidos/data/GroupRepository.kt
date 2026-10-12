@@ -4,6 +4,8 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.Source
+import java.security.SecureRandom
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -61,10 +63,14 @@ object GroupRepository {
             memberNames[newMemberId()] = person
         }
         val doc = groups.document()
-        doc.set(
+        val code = generateInviteCode()
+        db.runTransaction { transaction ->
+            val invitation = db.collection("invitations").document(code)
+            check(!transaction.get(invitation).exists()) { "Invitation collision. Please retry." }
+            transaction.set(doc,
             mapOf(
                 "name" to name.trim(),
-                "inviteCode" to generateInviteCode(),
+                "inviteCode" to code,
                 "type" to type,
                 "memberNames" to memberNames,
                 "memberClaims" to mapOf(creatorMemberId to uid),
@@ -72,18 +78,22 @@ object GroupRepository {
                 "defaultCurrency" to currency,
                 "createdAt" to Timestamp.now(),
             )
-        ).await()
+            )
+            transaction.set(invitation, mapOf("groupId" to doc.id))
+        }.await()
         return doc.id
     }
 
     /** Busca un grupo por código de invitación (para el flujo de unirse). */
     suspend fun findGroupByCode(inviteCode: String): Group? {
-        val snapshot = groups
-            .whereEqualTo("inviteCode", inviteCode.trim().uppercase())
-            .limit(1)
-            .get()
-            .await()
-        val doc = snapshot.documents.firstOrNull() ?: return null
+        val code = inviteCode.trim().uppercase()
+        if (!code.matches(Regex("[A-Z2-9]{6,32}"))) return null
+        val uid = AuthRepository.currentUser?.uid ?: return null
+        val invitation = db.collection("invitations").document(code).get(Source.SERVER).await()
+        val groupId = invitation.getString("groupId") ?: return null
+        db.collection("users").document(uid).collection("groupAccess").document(groupId)
+            .set(mapOf("code" to code)).await()
+        val doc = groups.document(groupId).get(Source.SERVER).await()
         return doc.toObject(Group::class.java)?.copy(id = doc.id)
     }
 
@@ -138,12 +148,18 @@ object GroupRepository {
 
     /** Vincula la cuenta [uid] a una persona existente del grupo ("soy Inés"). */
     suspend fun claimMember(groupId: String, memberId: String, uid: String) {
-        groups.document(groupId).update(
+        db.runTransaction { transaction ->
+            val ref = groups.document(groupId)
+            val group = transaction.get(ref).toObject(Group::class.java) ?: error("Group unavailable")
+            check(memberId in group.memberNames && memberId !in group.memberClaims) { "This person is already linked to an account." }
+            transaction.update(ref,
             mapOf(
                 "memberClaims.$memberId" to uid,
                 "memberIds" to FieldValue.arrayUnion(uid),
+                "lastJoinedMemberId" to memberId,
             )
-        ).await()
+            )
+        }.await()
     }
 
     /** Se une al grupo como una persona nueva ya vinculada a su cuenta. */
@@ -154,6 +170,7 @@ object GroupRepository {
                 "memberNames.$memberId" to name.trim(),
                 "memberClaims.$memberId" to uid,
                 "memberIds" to FieldValue.arrayUnion(uid),
+                "lastJoinedMemberId" to memberId,
             )
         ).await()
     }
@@ -436,6 +453,7 @@ object GroupRepository {
 
     private fun generateInviteCode(): String {
         val chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" // sin caracteres ambiguos
-        return (1..6).map { chars.random() }.joinToString("")
+        val random = SecureRandom()
+        return (1..12).map { chars[random.nextInt(chars.length)] }.joinToString("")
     }
 }
